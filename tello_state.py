@@ -33,7 +33,8 @@ if __name__ == "__main__":
             response, ip = socket.recvfrom(1024)
             if response == 'ok':
                 continue
-            out = response.replace(';', ';\n')
+            out = response.replace(b';', b';\n')
+            out = out.decode()
             out = 'Tello State:\n' + out
             report(out)
             sleep(INTERVAL)
