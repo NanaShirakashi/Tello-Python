@@ -2,6 +2,7 @@ from tello import Tello
 import sys
 from datetime import datetime
 import time
+import os
 
 start_time = str(datetime.now())
 
@@ -24,8 +25,9 @@ for command in commands:
             tello.send_command(command)
 
 log = tello.get_log()
-
-out = open('log/' + start_time + '.txt', 'w')
+dir_name = './log'
+os.makedirs(dir_name,exist_ok=True)
+out = open(dir_name + '/' + start_time + '.txt', 'w')
 for stat in log:
     stat.print_stats()
     str = stat.return_stats()
