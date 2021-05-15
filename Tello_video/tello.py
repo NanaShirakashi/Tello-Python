@@ -2,9 +2,10 @@ import socket
 import threading
 import time
 import numpy as np
-import sys 
-sys.path.insert(0,"./h264decoder/Linux/libh264decoder.so")
-
+# import sys 
+# sys.path.insert(0,"./h264decoder/Linux/libh264decoder.so")
+# import libh264decoder
+import h264decoder as libh264decoder
 class Tello:
     """Wrapper class to interact with the Tello drone."""
 
