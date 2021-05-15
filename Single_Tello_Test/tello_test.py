@@ -5,8 +5,7 @@ import time
 import os
 
 def main():
-    df_now = datetime.now()
-    start_time = df_now.strftime('%Y-%m-%d %H:%M:%S')
+    start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     file_name = sys.argv[1]
 
