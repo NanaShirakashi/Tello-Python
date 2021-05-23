@@ -4,7 +4,7 @@ import sys
 # from datetime import datetime
 import time
 import json
-from stats import Stats
+# from stats import Stats
 # import threading
 from PIL import Image
 from PIL import ImageTk
@@ -21,6 +21,7 @@ import platform
 
 
 from telegram.ext import Updater, CommandHandler,MessageHandler, Filters
+import tello
 from tello_bot import TelloBot
 
 
@@ -37,7 +38,7 @@ class TelloUI:
         Raises:
             RuntimeError: If the Tello rejects the attempt to enter command mode.
         """        
-
+  
         self.tello = tello # videostream device
         self.outputPath = './img/' # the path that save pictures created by clicking the takeSnapshot button 
         self.frame = None  # frame read from h264decoder and used for pose recognition 
@@ -55,20 +56,20 @@ class TelloUI:
         self.root = tki.Tk()
         self.panel = None
 
-        # create buttons
-        self.btn_snapshot = tki.Button(self.root, text="Snapshot!",
-                                       command=self.takeSnapshot)
-        self.btn_snapshot.pack(side="bottom", fill="both",
-                               expand="yes", padx=10, pady=5)
+        # # create buttons
+        # self.btn_snapshot = tki.Button(self.root, text="Snapshot!",
+        #                                command=self.takeSnapshot)
+        # self.btn_snapshot.pack(side="bottom", fill="both",
+        #                        expand="yes", padx=10, pady=5)
 
-        self.btn_pause = tki.Button(self.root, text="Pause", relief="raised", command=self.pauseVideo)
-        self.btn_pause.pack(side="bottom", fill="both",
-                            expand="yes", padx=10, pady=5)
+        # self.btn_pause = tki.Button(self.root, text="Pause", relief="raised", command=self.pauseVideo)
+        # self.btn_pause.pack(side="bottom", fill="both",
+        #                     expand="yes", padx=10, pady=5)
 
-        self.btn_landing = tki.Button(
-            self.root, text="Open Command Panel", relief="raised", command=self.openCmdWindow)
-        self.btn_landing.pack(side="bottom", fill="both",
-                              expand="yes", padx=10, pady=5)
+        # self.btn_landing = tki.Button(
+        #     self.root, text="Open Command Panel", relief="raised", command=self.openCmdWindow)
+        # self.btn_landing.pack(side="bottom", fill="both",
+        #                       expand="yes", padx=10, pady=5)
         
         # start a thread that constantly pools the video sensor for
         # the most recently read frame
@@ -101,18 +102,23 @@ class TelloUI:
                     continue 
             
             # transfer the format from frame to image         
-                image = Image.fromarray(self.frame)
+                # image = Image.fromarray(self.frame)
+            # transfer the format from frame to image use cv2
+                image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2BGR)
+
+                cv2.imshow('Opnecv Window', image)
+
 
             # we found compatibility problem between Tkinter,PIL and Macos,and it will 
             # sometimes result the very long preriod of the "ImageTk.PhotoImage" function,
             # so for Macos,we start a new thread to execute the _updateGUIImage function.
-                if system =="Windows" or system =="Linux":                
-                    self._updateGUIImage(image)
+                # if system =="Windows" or system =="Linux":                
+                #     self._updateGUIImage(image)
 
-                else:
-                    thread_tmp = threading.Thread(target=self._updateGUIImage,args=(image,))
-                    thread_tmp.start()
-                    time.sleep(0.03)                                                            
+                # else:
+                #     thread_tmp = threading.Thread(target=self._updateGUIImage,args=(image,))
+                #     thread_tmp.start()
+                #     time.sleep(0.03)                                                            
         except RuntimeError as e:
             print("[INFO] caught a RuntimeError")
 
@@ -148,103 +154,103 @@ class TelloUI:
         """       
         self.quit_waiting_flag = True        
    
-    def openCmdWindow(self):
-        """
-        open the cmd window and initial all the button and text
-        """        
-        panel = Toplevel(self.root)
-        panel.wm_title("Command Panel")
+    # def openCmdWindow(self):
+    #     """
+    #     open the cmd window and initial all the button and text
+    #     """        
+    #     panel = Toplevel(self.root)
+    #     panel.wm_title("Command Panel")
 
-        # create text input entry
-        text0 = tki.Label(panel,
-                          text='This Controller map keyboard inputs to Tello control commands\n'
-                               'Adjust the trackbar to reset distance and degree parameter',
-                          font='Helvetica 10 bold'
-                          )
-        text0.pack(side='top')
+    #     # create text input entry
+    #     text0 = tki.Label(panel,
+    #                       text='This Controller map keyboard inputs to Tello control commands\n'
+    #                            'Adjust the trackbar to reset distance and degree parameter',
+    #                       font='Helvetica 10 bold'
+    #                       )
+    #     text0.pack(side='top')
 
-        text1 = tki.Label(panel, text=
-                          'W - Move Tello Up\t\t\tArrow Up - Move Tello Forward\n'
-                          'S - Move Tello Down\t\t\tArrow Down - Move Tello Backward\n'
-                          'A - Rotate Tello Counter-Clockwise\tArrow Left - Move Tello Left\n'
-                          'D - Rotate Tello Clockwise\t\tArrow Right - Move Tello Right',
-                          justify="left")
-        text1.pack(side="top")
+        # text1 = tki.Label(panel, text=
+        #                   'W - Move Tello Up\t\t\tArrow Up - Move Tello Forward\n'
+        #                   'S - Move Tello Down\t\t\tArrow Down - Move Tello Backward\n'
+        #                   'A - Rotate Tello Counter-Clockwise\tArrow Left - Move Tello Left\n'
+        #                   'D - Rotate Tello Clockwise\t\tArrow Right - Move Tello Right',
+        #                   justify="left")
+        # text1.pack(side="top")
 
-        self.btn_landing = tki.Button(
-            panel, text="Land", relief="raised", command=self.telloLanding)
-        self.btn_landing.pack(side="bottom", fill="both",
-                              expand="yes", padx=10, pady=5)
+        # self.btn_landing = tki.Button(
+        #     panel, text="Land", relief="raised", command=self.telloLanding)
+        # self.btn_landing.pack(side="bottom", fill="both",
+        #                       expand="yes", padx=10, pady=5)
 
-        self.btn_takeoff = tki.Button(
-            panel, text="Takeoff", relief="raised", command=self.telloTakeOff)
-        self.btn_takeoff.pack(side="bottom", fill="both",
-                              expand="yes", padx=10, pady=5)
+        # self.btn_takeoff = tki.Button(
+        #     panel, text="Takeoff", relief="raised", command=self.telloTakeOff)
+        # self.btn_takeoff.pack(side="bottom", fill="both",
+        #                       expand="yes", padx=10, pady=5)
 
         # binding arrow keys to drone control
-        self.tmp_f = tki.Frame(panel, width=100, height=2)
-        self.tmp_f.bind('<KeyPress-w>', self.on_keypress_w)
-        self.tmp_f.bind('<KeyPress-s>', self.on_keypress_s)
-        self.tmp_f.bind('<KeyPress-a>', self.on_keypress_a)
-        self.tmp_f.bind('<KeyPress-d>', self.on_keypress_d)
-        self.tmp_f.bind('<KeyPress-Up>', self.on_keypress_up)
-        self.tmp_f.bind('<KeyPress-Down>', self.on_keypress_down)
-        self.tmp_f.bind('<KeyPress-Left>', self.on_keypress_left)
-        self.tmp_f.bind('<KeyPress-Right>', self.on_keypress_right)
-        self.tmp_f.pack(side="bottom")
-        self.tmp_f.focus_set()
+        # self.tmp_f = tki.Frame(panel, width=100, height=2)
+        # self.tmp_f.bind('<KeyPress-w>', self.on_keypress_w)
+        # self.tmp_f.bind('<KeyPress-s>', self.on_keypress_s)
+        # self.tmp_f.bind('<KeyPress-a>', self.on_keypress_a)
+        # self.tmp_f.bind('<KeyPress-d>', self.on_keypress_d)
+        # self.tmp_f.bind('<KeyPress-Up>', self.on_keypress_up)
+        # self.tmp_f.bind('<KeyPress-Down>', self.on_keypress_down)
+        # self.tmp_f.bind('<KeyPress-Left>', self.on_keypress_left)
+        # self.tmp_f.bind('<KeyPress-Right>', self.on_keypress_right)
+        # self.tmp_f.pack(side="bottom")
+        # self.tmp_f.focus_set()
 
-        self.btn_landing = tki.Button(
-            panel, text="Flip", relief="raised", command=self.openFlipWindow)
-        self.btn_landing.pack(side="bottom", fill="both",
-                              expand="yes", padx=10, pady=5)
+        # self.btn_landing = tki.Button(
+        #     panel, text="Flip", relief="raised", command=self.openFlipWindow)
+        # self.btn_landing.pack(side="bottom", fill="both",
+        #                       expand="yes", padx=10, pady=5)
 
-        self.distance_bar = Scale(panel, from_=0.02, to=5, tickinterval=0.01, digits=3, label='Distance(m)',
-                                  resolution=0.01)
-        self.distance_bar.set(0.2)
-        self.distance_bar.pack(side="left")
+        # self.distance_bar = Scale(panel, from_=0.02, to=5, tickinterval=0.01, digits=3, label='Distance(m)',
+        #                           resolution=0.01)
+        # self.distance_bar.set(0.2)
+        # self.distance_bar.pack(side="left")
 
-        self.btn_distance = tki.Button(panel, text="Reset Distance", relief="raised",
-                                       command=self.updateDistancebar,
-                                       )
-        self.btn_distance.pack(side="left", fill="both",
-                               expand="yes", padx=10, pady=5)
+        # self.btn_distance = tki.Button(panel, text="Reset Distance", relief="raised",
+        #                                command=self.updateDistancebar,
+        #                                )
+        # self.btn_distance.pack(side="left", fill="both",
+        #                        expand="yes", padx=10, pady=5)
 
-        self.degree_bar = Scale(panel, from_=1, to=360, tickinterval=10, label='Degree')
-        self.degree_bar.set(30)
-        self.degree_bar.pack(side="right")
+        # self.degree_bar = Scale(panel, from_=1, to=360, tickinterval=10, label='Degree')
+        # self.degree_bar.set(30)
+        # self.degree_bar.pack(side="right")
 
-        self.btn_distance = tki.Button(panel, text="Reset Degree", relief="raised", command=self.updateDegreebar)
-        self.btn_distance.pack(side="right", fill="both",
-                               expand="yes", padx=10, pady=5)
+        # self.btn_distance = tki.Button(panel, text="Reset Degree", relief="raised", command=self.updateDegreebar)
+        # self.btn_distance.pack(side="right", fill="both",
+        #                        expand="yes", padx=10, pady=5)
 
-    def openFlipWindow(self):
-        """
-        open the flip window and initial all the button and text
-        """
+    # def openFlipWindow(self):
+    #     """
+    #     open the flip window and initial all the button and text
+    #     """
         
-        panel = Toplevel(self.root)
-        panel.wm_title("Gesture Recognition")
+    #     panel = Toplevel(self.root)
+    #     panel.wm_title("Gesture Recognition")
 
-        self.btn_flipl = tki.Button(
-            panel, text="Flip Left", relief="raised", command=self.telloFlip_l)
-        self.btn_flipl.pack(side="bottom", fill="both",
-                            expand="yes", padx=10, pady=5)
+    #     self.btn_flipl = tki.Button(
+    #         panel, text="Flip Left", relief="raised", command=self.telloFlip_l)
+    #     self.btn_flipl.pack(side="bottom", fill="both",
+    #                         expand="yes", padx=10, pady=5)
 
-        self.btn_flipr = tki.Button(
-            panel, text="Flip Right", relief="raised", command=self.telloFlip_r)
-        self.btn_flipr.pack(side="bottom", fill="both",
-                            expand="yes", padx=10, pady=5)
+    #     self.btn_flipr = tki.Button(
+    #         panel, text="Flip Right", relief="raised", command=self.telloFlip_r)
+    #     self.btn_flipr.pack(side="bottom", fill="both",
+    #                         expand="yes", padx=10, pady=5)
 
-        self.btn_flipf = tki.Button(
-            panel, text="Flip Forward", relief="raised", command=self.telloFlip_f)
-        self.btn_flipf.pack(side="bottom", fill="both",
-                            expand="yes", padx=10, pady=5)
+    #     self.btn_flipf = tki.Button(
+    #         panel, text="Flip Forward", relief="raised", command=self.telloFlip_f)
+    #     self.btn_flipf.pack(side="bottom", fill="both",
+    #                         expand="yes", padx=10, pady=5)
 
-        self.btn_flipb = tki.Button(
-            panel, text="Flip Backward", relief="raised", command=self.telloFlip_b)
-        self.btn_flipb.pack(side="bottom", fill="both",
-                            expand="yes", padx=10, pady=5)
+    #     self.btn_flipb = tki.Button(
+    #         panel, text="Flip Backward", relief="raised", command=self.telloFlip_b)
+    #     self.btn_flipb.pack(side="bottom", fill="both",
+    #                         expand="yes", padx=10, pady=5)
        
     def takeSnapshot(self):
         """
@@ -262,16 +268,16 @@ class TelloUI:
         print("[INFO] saved {}".format(filename))
 
 
-    def pauseVideo(self):
-        """
-        Toggle the freeze/unfreze of video
-        """
-        if self.btn_pause.config('relief')[-1] == 'sunken':
-            self.btn_pause.config(relief="raised")
-            self.tello.video_freeze(False)
-        else:
-            self.btn_pause.config(relief="sunken")
-            self.tello.video_freeze(True)
+    # def pauseVideo(self):
+    #     """
+    #     Toggle the freeze/unfreze of video
+    #     """
+    #     if self.btn_pause.config('relief')[-1] == 'sunken':
+    #         self.btn_pause.config(relief="raised")
+    #         self.tello.video_freeze(False)
+    #     else:
+    #         self.btn_pause.config(relief="sunken")
+    #         self.tello.video_freeze(True)
 
     def telloTakeOff(self):
         return self.tello.takeoff()                
@@ -279,89 +285,89 @@ class TelloUI:
     def telloLanding(self):
         return self.tello.land()
 
-    def telloFlip_l(self):
-        return self.tello.flip('l')
+    # def telloFlip_l(self):
+    #     return self.tello.flip('l')
 
-    def telloFlip_r(self):
-        return self.tello.flip('r')
+    # def telloFlip_r(self):
+    #     return self.tello.flip('r')
 
-    def telloFlip_f(self):
-        return self.tello.flip('f')
+    # def telloFlip_f(self):
+    #     return self.tello.flip('f')
 
-    def telloFlip_b(self):
-        return self.tello.flip('b')
+    # def telloFlip_b(self):
+    #     return self.tello.flip('b')
 
-    def telloCW(self, degree):
-        return self.tello.rotate_cw(degree)
+    # def telloCW(self, degree):
+    #     return self.tello.rotate_cw(degree)
 
-    def telloCCW(self, degree):
-        return self.tello.rotate_ccw(degree)
+    # def telloCCW(self, degree):
+    #     return self.tello.rotate_ccw(degree)
 
-    def telloMoveForward(self, distance):
-        return self.tello.move_forward(distance)
+    # def telloMoveForward(self, distance):
+    #     return self.tello.move_forward(distance)
 
-    def telloMoveBackward(self, distance):
-        return self.tello.move_backward(distance)
+    # def telloMoveBackward(self, distance):
+    #     return self.tello.move_backward(distance)
 
-    def telloMoveLeft(self, distance):
-        return self.tello.move_left(distance)
+    # def telloMoveLeft(self, distance):
+    #     return self.tello.move_left(distance)
 
-    def telloMoveRight(self, distance):
-        return self.tello.move_right(distance)
+    # def telloMoveRight(self, distance):
+    #     return self.tello.move_right(distance)
 
-    def telloUp(self, dist):
-        return self.tello.move_up(dist)
+    # def telloUp(self, dist):
+    #     return self.tello.move_up(dist)
 
-    def telloDown(self, dist):
-        return self.tello.move_down(dist)
+    # def telloDown(self, dist):
+    #     return self.tello.move_down(dist)
 
-    def updateTrackBar(self):
-        self.my_tello_hand.setThr(self.hand_thr_bar.get())
+    # def updateTrackBar(self):
+    #     self.my_tello_hand.setThr(self.hand_thr_bar.get())
 
-    def updateDistancebar(self):
-        self.distance = self.distance_bar.get()
-        print('reset distance to %.1f' % self.distance)
+    # def updateDistancebar(self):
+    #     self.distance = self.distance_bar.get()
+    #     print('reset distance to %.1f' % self.distance)
 
-    def updateDegreebar(self):
-        self.degree = self.degree_bar.get()
-        print('reset distance to %d' % self.degree)
+    # def updateDegreebar(self):
+    #     self.degree = self.degree_bar.get()
+    #     print('reset distance to %d' % self.degree)
 
-    def on_keypress_w(self, event):
-        print("up %d m" % self.distance)
-        self.telloUp(self.distance)
+    # def on_keypress_w(self, event):
+    #     print("up %d m" % self.distance)
+    #     self.telloUp(self.distance)
 
-    def on_keypress_s(self, event):
-        print("down %d m" % self.distance)
-        self.telloDown(self.distance)
+    # def on_keypress_s(self, event):
+    #     print("down %d m" % self.distance)
+    #     self.telloDown(self.distance)
 
-    def on_keypress_a(self, event):
-        print("ccw %d degree" % self.degree)
-        self.tello.rotate_ccw(self.degree)
+    # def on_keypress_a(self, event):
+    #     print("ccw %d degree" % self.degree)
+    #     self.tello.rotate_ccw(self.degree)
 
-    def on_keypress_d(self, event):
-        print("cw %d m" % self.degree)
-        self.tello.rotate_cw(self.degree)
+    # def on_keypress_d(self, event):
+    #     print("cw %d m" % self.degree)
+    #     self.tello.rotate_cw(self.degree)
 
-    def on_keypress_up(self, event):
-        print("forward %d m" % self.distance)
-        self.telloMoveForward(self.distance)
+    # def on_keypress_up(self, event):
+    #     print("forward %d m" % self.distance)
+    #     self.telloMoveForward(self.distance)
 
-    def on_keypress_down(self, event):
-        print("backward %d m" % self.distance)
-        self.telloMoveBackward(self.distance)
+    # def on_keypress_down(self, event):
+    #     print("backward %d m" % self.distance)
+    #     self.telloMoveBackward(self.distance)
 
-    def on_keypress_left(self, event):
-        print("left %d m" % self.distance)
-        self.telloMoveLeft(self.distance)
+    # def on_keypress_left(self, event):
+    #     print("left %d m" % self.distance)
+    #     self.telloMoveLeft(self.distance)
 
-    def on_keypress_right(self, event):
-        print("right %d m" % self.distance)
-        self.telloMoveRight(self.distance)
+    # def on_keypress_right(self, event):
+    #     print("right %d m" % self.distance)
+    #     self.telloMoveRight(self.distance)
 
-    def on_keypress_enter(self, event):
-        if self.frame is not None:
-            self.registerFace()
-        self.tmp_f.focus_set()
+    # def on_keypress_enter(self, event):
+    #     if self.frame is not None:
+    #         self.registerFace()
+    #     self.tmp_f.focus_set()
 
     def onClose(self):
         """
@@ -387,52 +393,53 @@ class TelloUI:
 
  
     def reply(self, input):
-        start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         t1 = time.time()
 
         # command = input("write command:")
         command = input['utt']
 
-        if not command:
-            return{"utt":'input command',"end":False}
+        # if not command:
+        #     return{"utt":'input command',"end":False}
 
-        if command != '' and command != '\n':
-            command = command.rstrip()
+        # if command != '' and command != '\n':
+        #     command = command.rstrip()
 
-            if command.find('delay') != -1:
-                sec = float(command.partition('delay')[2])
-                print('delay %s' % sec)
-                time.sleep(sec)
-                pass
-            else:
-                # self.send_command(command)
-                message = self.send_command(command)
+        #     if command.find('delay') != -1:
+        #         sec = float(command.partition('delay')[2])
+        #         print('delay %s' % sec)
+        #         time.sleep(sec)
+        #         pass
+        #     else:
+        #         # self.send_command(command)
+        #         message = self.send_command(command)
+
+        if 'snapshot' in command:
+            self.takeSnapshot()
+
+        if 'takeoff' in command:
+            self.telloTakeOff()
+        if 'land' in command:
+            self.telloLanding()
 
         if 'end' in command:
             print('...')
-            self.on_close()
+            self.onClose()
             return{'utt':'command end','end':False}
 
         if time.time()-t1 > 20: #max 20 secs
             self.send_command('land')
-            self.on_close() #land and kill socket connection
+            self.onClose() #land and kill socket connection
             return{'utt':'timeout','end':False} 
 
-        # log = self.get_log()
 
-        # with open('log/' + start_time + '.txt', 'a') as f:
-        #     for stat in log:
-        #         stat.print_stats()
-        #         str = stat.return_stats()
-        #         f.write(str)   
-
-        return {"utt": message, "end": False}
+        return {"utt": 'Done!', "end": False}
 
  
  
 if __name__ == '__main__':
-
-    system = TelloSystem() 
+    drone = tello.Tello('', 8889)
+    system = TelloUI(drone) 
     bot = TelloBot(system)
     bot.run()
     # log = self.get_log()
