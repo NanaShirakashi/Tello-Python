@@ -79,10 +79,14 @@ class TelloSystem:
         if 'land' in command:
             self.drone.land()
 
-        if 'flip' in command:
-            return {"utt":'input diection', "end":False}
+        # if 'flip' in command:
+        #     return {"utt":'input diection', "end":False}
         if 'flip l' in command:
-            self.drone.flip(l)
+            self.drone.flip('l')
+            return {"utt":"okok", 'end':False}
+
+        if 'rotate' in command:
+            self.drone.rotate_cw(360)
 
         return {"utt": 'Done!', "end": False}
 
