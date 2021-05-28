@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-import tello        # tello.pyをインポート
-import time         # time.sleepを使いたいので
-import cv2          # OpenCVを使うため
+import tello       
+import time
+import cv2
 import threading
 import datetime
 import os
@@ -12,37 +10,33 @@ import concurrent.futures
 
 
 
-# メイン関数
 class TelloSystem:
     def __init__(self):
-        pass
-        # Telloクラスを使って，droneというインスタンス(実体)を作る
+
         self.drone = tello.Tello('', 8889, command_timeout=.01)  
 
-        self.current_time = time.time()  # 現在時刻の保存変数
+        self.current_time = time.time()
         self.pre_time = self.current_time
 
 
     def show_window(self):
         time.sleep(0.5)
         while True:
-            frame = self.drone.read()    # 映像を1フレーム取得
-            if frame is None or frame.size == 0:    # 中身がおかしかったら無視
+            frame = self.drone.read()
+            if frame is None or frame.size == 0:
                 continue
 
-            # (B)ここから画像処理
+
             image = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-            small_image = cv2.resize(image, dsize=(480,360) )   # 画像サイズを半分に変更
+            small_image = cv2.resize(image, dsize=(480,360) )
+
+            cv2.imshow('Tello Window', small_image)   
 
 
-                    # (X)ウィンドウに表示
-            cv2.imshow('Tello Window', small_image)    # ウィンドウに表示するイメージを変えれば色々表示できる
-
-                    # (Z)5秒おきに'command'を送って、死活チェックを通す
-            current_time = time.time()  # 現在時刻を取得
+            current_time = time.time()
             if current_time - self.pre_time > 5.0 : 
-                self.drone.send_command('command')   # 'command'送信
-                self.pre_time = current_time         # 前回時刻を更新
+                self.drone.send_command('command')  
+                self.pre_time = current_time         
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -67,28 +61,34 @@ class TelloSystem:
             del self.drone
             return{'utt':'end','end':False}
 
-        if time.time()-t1 > 20:
-            self.drone.land()
-            del self.drone #land and kill socket connection
-            return{'utt':'timeout','end':False} 
+        # if time.time()-t1 > 20:
+        #     self.drone.land()
+        #     del self.drone #land and kill socket connection
+        #     return{'utt':'timeout','end':False} 
 
         # self.drone.send_command(command)  
 
         if 'takeoff' in command:
             self.drone.takeoff()
+            return {'utt':command, 'end':False}
         if 'land' in command:
             self.drone.land()
+            return {'utt':command, 'end':False}
 
         # if 'flip' in command:
         #     return {"utt":'input diection', "end":False}
-        if 'flip l' in command:
-            self.drone.flip('l')
-            return {"utt":"okok", 'end':False}
+        if 'flip' in command:
+            self.drone.flip("l")
+            return {"utt":command, 'end':False}
 
         if 'rotate' in command:
-            self.drone.rotate_cw(360)
+            self.drone.rotate_cw(180)
+            return{"utt":command,'end':False}
+        if 'move' in command:
+            self.drone.move('forward',500)
+            return{'utt':'command','end':False}
 
-        return {"utt": 'Done!', "end": False}
+        return {"utt": 'warong command!', "end": False}
 
 if __name__ == "__main__":
     system = TelloSystem()
