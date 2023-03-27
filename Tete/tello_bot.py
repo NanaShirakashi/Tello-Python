@@ -1,7 +1,7 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
  
 # アクセストークン（先ほど発行されたアクセストークンに書き換えてください）
-TOKEN = "1844693901:AAF1XYd8HMPMEdGCGnvamAtxEWCq1-1dgos"
+TOKEN = ""
  
  
 class TelloBot:
